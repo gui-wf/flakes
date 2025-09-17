@@ -15,7 +15,7 @@ Setting up development environments should be fast and consistent. This reposito
 ## Quick Start
 
 ```bash
-nix flake init -t github:your-username/flakes
+nix flake init -t github:gui-baeta/flakes
 ```
 
 This creates a development environment perfect for exploring or starting any project.
@@ -41,7 +41,7 @@ The template includes a demonstration bash script package that:
 ```bash
 mkdir my-project
 cd my-project
-nix flake init -t github:your-username/flakes
+nix flake init -t github:gui-baeta/flakes
 ```
 
 ### 2. Enter Development Environment
@@ -145,13 +145,13 @@ experimental-features = nix-command flakes
 
 ### Default Template (Recommended)
 ```bash
-nix flake init -t github:your-username/flakes
+nix flake init -t github:gui-baeta/flakes
 ```
 General-purpose development environment with Node.js, Python, example package/app, and MCP configuration.
 
 ### Blender Template
 ```bash
-nix flake init -t github:your-username/flakes#blender
+nix flake init -t github:gui-baeta/flakes#blender
 ```
 Specialized environment for Blender development with Blender, uv, and Blender MCP server.
 

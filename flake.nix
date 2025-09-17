@@ -23,8 +23,8 @@
           ];
           shellHook = ''
             echo "🧊 Nix Development Environment"
-            echo "Available templates: frontend, backend, scripting"
-            echo "Usage: nix flake init -t github:your-username/flakes#template-name"
+            echo "Available templates: default, blender"
+            echo "Usage: nix flake init -t github:gui-baeta/flakes"
           '';
         };
       }
