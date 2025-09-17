@@ -12,9 +12,9 @@ This repository contains Nix flake templates for development environments.
 
 ### Default Template (General Purpose)
 ```bash
-nix flake init -t github:your-username/flakes
+nix flake init -t github:gui-baeta/flakes
 # or explicitly:
-nix flake init -t github:your-username/flakes#default
+nix flake init -t github:gui-baeta/flakes#default
 ```
 - Node.js + Python + essential tools
 - Example package and app structure
@@ -22,7 +22,7 @@ nix flake init -t github:your-username/flakes#default
 
 ### Blender Template
 ```bash
-nix flake init -t github:your-username/flakes#blender
+nix flake init -t github:gui-baeta/flakes#blender
 ```
 - Blender for 3D modeling/animation
 - uv for Python package management
