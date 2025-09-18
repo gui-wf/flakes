@@ -28,9 +28,30 @@ nix flake init -t github:gui-baeta/flakes#blender
 - uv for Python package management
 - Blender-specific MCP server
 
+### Zola Template
+```bash
+nix flake init -t github:gui-baeta/flakes#zola
+```
+- Zola static site generator
+- General development workflows and documentation
+- Comprehensive Zola development guidelines
+
+### Zola-Blog-Init Template
+```bash
+nix flake init -t github:gui-baeta/flakes#zola-blog-init
+```
+- Specialized blog theme creation template
+- Complete Zola blog theme development prompt with Claude Code integration
+- Cloudflare Pages deployment configuration
+- Production-ready theme creation guide with example prompts
+
 ## Common Dependencies
 
 Base tools in all templates: `wget`, `yq`, `jq`, `nodejs`, `python3`
+
+## Template Documentation
+
+For detailed template examples and usage patterns, see [@docs/TEMPLATES.md](docs/TEMPLATES.md).
 
 ## Development Environment
 
@@ -84,7 +105,7 @@ Required environment variables: `REF_API_KEY`, `PERPLEXITY_API_KEY`
 When adding new templates:
 1. Create directory under `templates/`
 2. Add `flake.nix` with proper `buildInputs`
-3. Include `.mcp.json` configuration  
+3. Include `.mcp.json` configuration
 4. Update main `flake.nix` templates section
 5. Update README.md documentation
 

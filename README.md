@@ -1,13 +1,13 @@
-# Nix Flake Development Template
+# Super Mega Opinionated Flake Templates to Quick Start Projects
+These are templates to make my life a little less frustrating. hopefully can help you too, fellow intern-aut
 
-A simple, general-purpose Nix flake template that eliminates the need to set up a new `flake.nix` from scratch every time you start a new project.
-
-## Why This Template Exists
-
-Setting up development environments should be fast and consistent. This repository provides templates for:
+## Templates provided
+This repository provides templates for:
 
 - **General-purpose development** with Node.js, Python, and essential tools
 - **Blender development** for 3D modeling and animation projects
+- **Zola static sites** for fast, modern website generation
+- **Zola blog themes** with comprehensive creation prompts and deployment guides
 - **Example package and app** structures demonstrating Nix flake patterns
 - **MCP server configurations** for enhanced AI assistance
 - **Common utilities** (`wget`, `yq`, `jq`) included by default
@@ -76,7 +76,7 @@ The template provides a foundation. Modify `flake.nix` to:
 ### MCP Server Configuration
 The template includes `.mcp.json` with pre-configured MCP servers:
 - **Ref**: Reference and documentation tools
-- **Sequential Thinking**: Enhanced reasoning capabilities  
+- **Sequential Thinking**: Enhanced reasoning capabilities
 - **Perplexity**: Web search and research assistance
 
 Set the required environment variables:
@@ -98,7 +98,7 @@ The included `hello-script` demonstrates:
 ```nix
 buildInputs = with pkgs; [
   # Existing tools...
-  
+
   # Add your tools
   docker
   terraform
@@ -122,9 +122,9 @@ apps = {
     type = "app";
     program = "${hello-script}/bin/hello-script";
   };
-  
+
   my-app = {
-    type = "app"; 
+    type = "app";
     program = "${my-tool}/bin/my-tool";
   };
 };
@@ -155,6 +155,18 @@ nix flake init -t github:gui-baeta/flakes#blender
 ```
 Specialized environment for Blender development with Blender, uv, and Blender MCP server.
 
+### Zola Template
+```bash
+nix flake init -t github:gui-baeta/flakes#zola
+```
+Static site generator environment with Zola, includes `nix run` (serve) and `nix run .#build` commands.
+
+### Zola-Blog-Init Template
+```bash
+nix flake init -t github:gui-baeta/flakes#zola-blog-init
+```
+Specialized template for creating complete Zola blog themes from scratch with detailed prompts for Cloudflare Pages deployment. Includes comprehensive CLAUDE.md with step-by-step implementation guide.
+
 ## Repository Structure
 
 ```
@@ -165,10 +177,20 @@ Specialized environment for Blender development with Blender, uv, and Blender MC
 └── templates/
     ├── default/              # Default template
     │   ├── flake.nix         # Template flake with example package/app
-    │   └── .mcp.json         # General MCP server configuration
-    └── blender/              # Blender template
-        ├── flake.nix         # Blender development environment
-        └── .mcp.json         # Blender MCP server configuration
+    │   ├── .mcp.json         # General MCP server configuration
+    │   └── CLAUDE.md         # Default template AI guidelines
+    ├── blender/              # Blender template
+    │   ├── flake.nix         # Blender development environment
+    │   ├── .mcp.json         # Blender MCP server configuration
+    │   └── CLAUDE.md         # Blender-specific AI guidelines
+    ├── zola/                 # Zola template
+    │   ├── flake.nix         # Zola static site environment
+    │   ├── .mcp.json         # General MCP server configuration
+    │   └── CLAUDE.md         # Zola-specific AI guidelines
+    └── zola-blog-init/       # Zola blog theme creation template
+        ├── flake.nix         # Zola development environment
+        ├── .mcp.json         # General MCP server configuration
+        └── CLAUDE.md         # Blog theme creation prompt
 ```
 
 ## Contributing

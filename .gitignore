@@ -1,0 +1,4 @@
+.direnv
+
+!/*/.mcp.json
+.mcp.json
