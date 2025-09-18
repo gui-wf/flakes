@@ -6,8 +6,14 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
@@ -23,12 +29,13 @@
           ];
           shellHook = ''
             echo "🧊 Nix Development Environment"
-            echo "Available templates: default, blender"
+            echo "Available templates: default, blender, zola, zola-blog-init"
             echo "Usage: nix flake init -t github:gui-baeta/flakes"
           '';
         };
       }
-    ) // {
+    )
+    // {
       # Template definitions
       templates = {
         default = {
@@ -84,6 +91,92 @@
             ```bash
             blender
             ```
+          '';
+        };
+
+        zola = {
+          path = ./templates/zola;
+          description = "Zola static site generator development environment";
+          welcomeText = ''
+            # Zola Static Site Template
+
+            This template provides a development environment for Zola static sites with:
+            - Zola static site generator
+            - Node.js for additional tooling
+            - Python 3 for scripting
+            - Common utilities: wget, yq, jq
+            - Git and basic development tools
+            - MCP server configuration for AI assistance
+
+            ## Getting started
+            ```bash
+            nix develop
+            # or with direnv
+            direnv allow
+            ```
+
+            ## Create and serve site
+            ```bash
+            zola init mysite && cd mysite
+            nix run          # Start development server
+            nix run .#build  # Build static site
+            ```
+          '';
+        };
+
+        zola-blog-init = {
+          path = ./templates/zola-blog-init;
+          description = "Zola blog theme creation template with Cloudflare Pages deployment setup";
+          welcomeText = ''
+            # Zola Blog Theme Initialization Template
+
+            This template provides everything needed to create a complete minimal Zola blog theme
+            optimized for Cloudflare Pages deployment with:
+            - Zola static site generator
+            - Specialized blog theme creation prompt in CLAUDE.md
+            - Complete theme setup guide with templates, styles, and deployment
+            - Node.js for additional tooling
+            - Python 3 for scripting
+            - Common utilities: wget, yq, jq
+            - MCP server configuration for AI assistance
+
+            ## Getting started
+            ```bash
+            nix develop
+            # or with direnv
+            direnv allow
+            ```
+
+            ## Using with Claude Code
+
+            This template includes a specialized CLAUDE.md with a comprehensive prompt for
+            building production-ready blog themes. Use it with Claude Code like this:
+
+            ```bash
+            zola init my-blog && cd my-blog
+            # The CLAUDE.md contains detailed instructions for theme creation
+            
+            # Example prompt to get started:
+            # "I want to build a minimal Zola blog theme following the CLAUDE.md prompt.
+            #  Please read the CLAUDE.md file and create the complete theme structure 
+            #  with config.toml, templates/, sass/, and content/ directories.
+            #  Focus on card-based post layouts and Cloudflare Pages deployment."
+            ```
+
+            ## Development commands
+            ```bash
+            nix run          # Start development server (zola serve)
+            nix run .#build  # Build static site (zola build)
+            ```
+
+            The CLAUDE.md file contains a complete implementation guide with:
+            - Step-by-step theme creation instructions
+            - Template code for all required files
+            - Sass styling with responsive design
+            - Cloudflare Pages deployment configuration
+            - Content structure and example posts
+
+            Perfect for creating professional blog themes with AI assistance!
           '';
         };
       };
