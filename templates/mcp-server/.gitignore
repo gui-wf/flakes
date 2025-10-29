@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.mcp
+.envrc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Nix
+result
+result-*
+.direnv/
+
+# Temporary files
+*.tmp
+tmp/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Secrets
+*.env.enc
+.mcp.env.enc

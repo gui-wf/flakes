@@ -1,0 +1,9 @@
+creation_rules:
+  - path_regex: \.env\.enc$
+    key_groups:
+    - age:
+       - age1yourkeyhere  # Replace with your age public key
+  - path_regex: \.mcp\.env\.enc$
+    key_groups:
+    - age:
+       - age1yourkeyhere  # Replace with your age public key
