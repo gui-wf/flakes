@@ -29,7 +29,7 @@
           ];
           shellHook = ''
             echo "🧊 Nix Development Environment"
-            echo "Available templates: default, blender, zola, zola-blog-init"
+            echo "Available templates: default, blender, mcp-server, zola, zola-blog-init"
             echo "Usage: nix flake init -t github:gui-baeta/flakes"
           '';
         };
@@ -91,6 +91,54 @@
             ```bash
             blender
             ```
+          '';
+        };
+
+        mcp-server = {
+          path = ./templates/mcp-server;
+          description = "TypeScript-based Model Context Protocol (MCP) server development environment";
+          welcomeText = ''
+            # MCP Server Development Template
+
+            This template provides a complete development environment for building MCP servers with:
+            - Node.js 20 with npm for JavaScript/TypeScript runtime
+            - TypeScript compiler and language server for type-safe development
+            - Secrets management with sops and age for secure API key handling
+            - Core utilities: wget, yq, jq, curl, tree
+            - Git and development tools
+            - Production build configuration with buildNpmPackage
+            - Comprehensive CLAUDE.md with MCP best practices
+
+            ## Getting started
+            ```bash
+            nix develop
+            # or with direnv
+            direnv allow
+            ```
+
+            ## Quick start workflow
+            ```bash
+            npm init -y                              # Initialize project
+            npm install @modelcontextprotocol/sdk   # Install MCP SDK
+            npm install -D typescript @types/node   # Install dev dependencies
+            npm run dev                             # Run in development mode
+            npm run inspector                       # Test with MCP Inspector
+            ```
+
+            ## Secrets management
+            The template includes sops/age for managing API keys and secrets:
+            - Store encrypted secrets in .mcp.env.enc
+            - Auto-decrypt on shell entry
+            - Never commit plaintext secrets
+
+            ## Production build
+            Update the flake.nix production package configuration and run:
+            ```bash
+            nix build    # Build production package
+            nix run      # Run the built server
+            ```
+
+            See CLAUDE.md for comprehensive MCP server development guidelines, patterns, and best practices.
           '';
         };
 
