@@ -1,4 +1,7 @@
 .direnv
 
-!/*/.mcp.json
+# Allow .mcp.json and .envrc in templates
+!templates/**/.mcp.json
+!templates/**/.envrc
 .mcp.json
+.envrc
