@@ -167,6 +167,18 @@ nix flake init -t github:gui-baeta/flakes#zola-blog-init
 ```
 Specialized template for creating complete Zola blog themes from scratch with detailed prompts for Cloudflare Pages deployment. Includes comprehensive CLAUDE.md with step-by-step implementation guide.
 
+### Node.js Template
+```bash
+nix flake init -t github:gui-baeta/flakes#nodejs
+```
+Node.js development environment with npm, TypeScript Language Server, auto npm install, and node_modules/.bin in PATH.
+
+### Python Template
+```bash
+nix flake init -t github:gui-baeta/flakes#python
+```
+Python development environment with uv package manager, automatic venv creation, and Python LSP Server for IDE support.
+
 ## Repository Structure
 
 ```
@@ -187,10 +199,18 @@ Specialized template for creating complete Zola blog themes from scratch with de
     │   ├── flake.nix         # Zola static site environment
     │   ├── .mcp.json         # General MCP server configuration
     │   └── CLAUDE.md         # Zola-specific AI guidelines
-    └── zola-blog-init/       # Zola blog theme creation template
-        ├── flake.nix         # Zola development environment
+    ├── zola-blog-init/       # Zola blog theme creation template
+    │   ├── flake.nix         # Zola development environment
+    │   ├── .mcp.json         # General MCP server configuration
+    │   └── CLAUDE.md         # Blog theme creation prompt
+    ├── nodejs/               # Node.js template
+    │   ├── flake.nix         # Node.js development environment
+    │   ├── .mcp.json         # General MCP server configuration
+    │   └── CLAUDE.md         # Node.js AI guidelines
+    └── python/               # Python template
+        ├── flake.nix         # Python + uv development environment
         ├── .mcp.json         # General MCP server configuration
-        └── CLAUDE.md         # Blog theme creation prompt
+        └── CLAUDE.md         # Python AI guidelines
 ```
 
 ## Contributing
