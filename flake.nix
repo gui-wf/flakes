@@ -28,9 +28,9 @@
             python3
           ];
           shellHook = ''
-            echo "🧊 Nix Development Environment"
-            echo "Available templates: default, blender, mcp-server, zola, zola-blog-init"
-            echo "Usage: nix flake init -t github:gui-baeta/flakes"
+            echo "Nix Development Environment"
+            echo "Available templates: default, blender, mcp-server, zola, zola-blog-init, nodejs, python"
+            echo "Usage: nix flake init -t github:gui-baeta/flakes#<template>"
           '';
         };
       }
@@ -203,10 +203,10 @@
             ```bash
             zola init my-blog && cd my-blog
             # The CLAUDE.md contains detailed instructions for theme creation
-            
+
             # Example prompt to get started:
             # "I want to build a minimal Zola blog theme following the CLAUDE.md prompt.
-            #  Please read the CLAUDE.md file and create the complete theme structure 
+            #  Please read the CLAUDE.md file and create the complete theme structure
             #  with config.toml, templates/, sass/, and content/ directories.
             #  Focus on card-based post layouts and Cloudflare Pages deployment."
             ```
@@ -225,6 +225,84 @@
             - Content structure and example posts
 
             Perfect for creating professional blog themes with AI assistance!
+          '';
+        };
+
+        nodejs = {
+          path = ./templates/nodejs;
+          description = "Node.js development environment with npm and TypeScript support";
+          welcomeText = ''
+            # Node.js Development Template
+
+            This template provides a Node.js development environment with:
+            - Node.js 22 with npm
+            - TypeScript Language Server for IDE support
+            - Auto npm install when package.json changes
+            - Common utilities: wget, yq, jq, git, curl
+            - MCP server configuration for AI assistance
+
+            ## Getting started
+            ```bash
+            nix develop
+            # or with direnv
+            direnv allow
+            ```
+
+            ## Quick start
+            ```bash
+            npm init -y                    # Initialize project
+            npm install                    # Install dependencies
+            npm run dev                    # Start development server
+            ```
+
+            ## Create a Vite project
+            ```bash
+            npm create vite@latest my-app -- --template react-ts
+            cd my-app && npm install
+            npm run dev
+            ```
+
+            See CLAUDE.md for development guidelines and patterns.
+          '';
+        };
+
+        python = {
+          path = ./templates/python;
+          description = "Python development environment with uv package manager and venv support";
+          welcomeText = ''
+            # Python Development Template
+
+            This template provides a Python development environment with:
+            - Python 3 with virtual environment support
+            - uv for fast, modern package management
+            - Python LSP Server for IDE support
+            - Auto venv creation on shell entry
+            - Common utilities: wget, yq, jq, git, curl
+            - MCP server configuration for AI assistance
+
+            ## Getting started
+            ```bash
+            nix develop
+            # or with direnv
+            direnv allow
+            ```
+
+            ## Quick start
+            ```bash
+            uv init                        # Initialize project
+            uv add requests                # Add dependency
+            uv run python script.py        # Run in venv
+            uv run pytest                  # Run tests
+            ```
+
+            ## Create a FastAPI project
+            ```bash
+            uv init my-api && cd my-api
+            uv add fastapi uvicorn
+            uv run uvicorn main:app --reload
+            ```
+
+            See CLAUDE.md for development guidelines and patterns.
           '';
         };
       };
