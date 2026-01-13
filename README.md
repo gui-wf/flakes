@@ -1,222 +1,139 @@
-# Super Mega Opinionated Flake Templates to Quick Start Projects
-These are templates to make my life a little less frustrating. hopefully can help you too, fellow intern-aut
+# Development Templates & Packages
 
-## Templates provided
-This repository provides templates for:
+Quick-start templates and reusable packages for common development environments.
 
-- **General-purpose development** with Node.js, Python, and essential tools
-- **Blender development** for 3D modeling and animation projects
-- **Zola static sites** for fast, modern website generation
-- **Zola blog themes** with comprehensive creation prompts and deployment guides
-- **Example package and app** structures demonstrating Nix flake patterns
-- **MCP server configurations** for enhanced AI assistance
-- **Common utilities** (`wget`, `yq`, `jq`) included by default
+## What is a Nix Flake?
+
+Think of a Nix flake as a **reproducible development environment in a file**. It:
+- Defines exactly what tools and versions you need
+- Works the same way on any computer
+- Can be shared with others (they'll get the exact same setup)
+- Doesn't pollute your global system
+
+**Example**: Instead of "install Node.js globally, hope it's the right version, install packages, cross fingers", you run `nix develop` and get **exactly** the environment you need, every time.
+
+## What This Repository Provides
+
+### 📦 Packages (Reusable Software)
+
+| Package | Description | Usage |
+|---------|-------------|-------|
+| **auto-claude** | Autonomous multi-agent coding framework (Electron app) | `nix run github:gui-wf/flakes#auto-claude` |
+
+### 📝 Templates (Project Starters)
+
+| Template | Tools Included | Use Case |
+|----------|----------------|----------|
+| **default** | Node.js, Python, jq, git | General development |
+| **nodejs** | Node.js 22, npm, TypeScript LSP | JavaScript/TypeScript projects |
+| **python** | Python 3, uv, venv, LSP | Python projects |
+| **blender** | Blender, Python, uv | 3D modeling/animation |
+| **zola** | Zola static site generator | Static websites |
+| **zola-blog-init** | Zola + blog theme prompts | Blog creation |
+| **mcp-server** | Node.js, TypeScript, sops, age | MCP server development |
 
 ## Quick Start
 
+### Use a Template
+
 ```bash
-nix flake init -t github:gui-baeta/flakes
-```
+# Start a new project with a template
+mkdir my-project && cd my-project
+nix flake init -t github:gui-wf/flakes#nodejs
 
-This creates a development environment perfect for exploring or starting any project.
-
-## What's Included
-
-### Development Environment
-- **Node.js** with npm
-- **Python 3** with pip
-- **Essential utilities**: wget, yq, jq
-- **Development tools**: git, curl, tree, nano, vim
-- **MCP server configuration** for AI assistance
-
-### Example Package & App
-The template includes a demonstration bash script package that:
-- Shows how to create packages in Nix flakes
-- Uses `jq` as a dependency example
-- Can be run with `nix run` or called directly in the dev shell
-
-## Usage
-
-### 1. Initialize Your Project
-```bash
-mkdir my-project
-cd my-project
-nix flake init -t github:gui-baeta/flakes
-```
-
-### 2. Enter Development Environment
-```bash
+# Enter the development environment
 nix develop
+
+# Or use direnv for automatic activation
+echo "use flake" > .envrc && direnv allow
 ```
 
-Or with direnv (recommended):
+### Use a Package
+
 ```bash
-echo "use flake" > .envrc
-direnv allow
+# Run auto-claude directly
+nix run github:gui-wf/flakes#auto-claude
+
+# Or install it
+nix profile install github:gui-wf/flakes#auto-claude
 ```
 
-### 3. Try the Example App
-```bash
-# Run the example script
-nix run
+### Use in Your Own Flake
 
-# Or if you're in the dev shell:
-hello-script
-```
-
-### 4. Start Building
-The template provides a foundation. Modify `flake.nix` to:
-- Add your preferred development tools
-- Create your own packages
-- Define custom apps
-- Set up project-specific dependencies
-
-## Template Features
-
-### MCP Server Configuration
-The template includes `.mcp.json` with pre-configured MCP servers:
-- **Ref**: Reference and documentation tools
-- **Sequential Thinking**: Enhanced reasoning capabilities
-- **Perplexity**: Web search and research assistance
-
-Set the required environment variables:
-```bash
-export REF_API_KEY="your-ref-api-key"
-export PERPLEXITY_API_KEY="your-perplexity-api-key"
-```
-
-### Example Package Structure
-The included `hello-script` demonstrates:
-- Creating executable packages with `writeShellScriptBin`
-- Using other Nix packages as dependencies
-- Making packages available in both apps and devShells
-- Proper package referencing with `${pkgs.jq}/bin/jq`
-
-## Customization Examples
-
-### Adding New Packages
 ```nix
-buildInputs = with pkgs; [
-  # Existing tools...
+{
+  inputs.dev-flakes.url = "github:gui-wf/flakes";
 
-  # Add your tools
-  docker
-  terraform
-  go
-];
-```
+  outputs = { self, nixpkgs, dev-flakes }: {
+    # Use a package
+    packages.x86_64-linux.default =
+      dev-flakes.packages.x86_64-linux.auto-claude;
 
-### Creating Your Own Package
-```nix
-my-tool = pkgs.writeShellScriptBin "my-tool" ''
-  #!/usr/bin/env bash
-  echo "My custom tool!"
-  # Use dependencies: ${pkgs.somePackage}/bin/command
-'';
-```
-
-### Adding Multiple Apps
-```nix
-apps = {
-  default = {
-    type = "app";
-    program = "${hello-script}/bin/hello-script";
+    # Inherit a template
+    templates.my-template = dev-flakes.templates.nodejs;
   };
-
-  my-app = {
-    type = "app";
-    program = "${my-tool}/bin/my-tool";
-  };
-};
+}
 ```
+
+## How It Works (Auto-Discovery)
+
+This repository uses Nix's built-in functions to **automatically discover** templates and packages:
+
+- **Templates**: Any directory in `templates/` becomes a template
+- **Packages**: Any directory in `packages/` with `package.nix` becomes a package
+
+**To add your own:**
+```bash
+# Add a template - just create a directory
+mkdir templates/rust
+# Add files (flake.nix, etc.)
+# Done! Available as: nix flake init -t .#rust
+
+# Add a package - just create a directory
+mkdir packages/my-tool
+# Add package.nix
+# Done! Available as: nix build .#my-tool
+```
+
+No need to edit the main `flake.nix` - everything is discovered automatically using `builtins.readDir` and `lib.mapAttrs`.
 
 ## Requirements
 
-- Nix with flakes enabled
-- Git (for template initialization)
-
-### Enabling Nix Flakes
-Add to your `~/.config/nix/nix.conf` or `/etc/nix/nix.conf`:
-```
+**Nix with flakes enabled**:
+```bash
+# Add to ~/.config/nix/nix.conf or /etc/nix/nix.conf
 experimental-features = nix-command flakes
 ```
 
-## Available Templates
+Install Nix: https://nixos.org/download
 
-### Default Template (Recommended)
-```bash
-nix flake init -t github:gui-baeta/flakes
-```
-General-purpose development environment with Node.js, Python, example package/app, and MCP configuration.
-
-### Blender Template
-```bash
-nix flake init -t github:gui-baeta/flakes#blender
-```
-Specialized environment for Blender development with Blender, uv, and Blender MCP server.
-
-### Zola Template
-```bash
-nix flake init -t github:gui-baeta/flakes#zola
-```
-Static site generator environment with Zola, includes `nix run` (serve) and `nix run .#build` commands.
-
-### Zola-Blog-Init Template
-```bash
-nix flake init -t github:gui-baeta/flakes#zola-blog-init
-```
-Specialized template for creating complete Zola blog themes from scratch with detailed prompts for Cloudflare Pages deployment. Includes comprehensive CLAUDE.md with step-by-step implementation guide.
-
-### Node.js Template
-```bash
-nix flake init -t github:gui-baeta/flakes#nodejs
-```
-Node.js development environment with npm, TypeScript Language Server, auto npm install, and node_modules/.bin in PATH.
-
-### Python Template
-```bash
-nix flake init -t github:gui-baeta/flakes#python
-```
-Python development environment with uv package manager, automatic venv creation, and Python LSP Server for IDE support.
-
-## Repository Structure
+## Structure
 
 ```
-.
-├── flake.nix                 # Main flake with template definitions
-├── README.md                 # This file
-├── CLAUDE.md                 # Claude Code memory file
-└── templates/
-    ├── default/              # Default template
-    │   ├── flake.nix         # Template flake with example package/app
-    │   ├── .mcp.json         # General MCP server configuration
-    │   └── CLAUDE.md         # Default template AI guidelines
-    ├── blender/              # Blender template
-    │   ├── flake.nix         # Blender development environment
-    │   ├── .mcp.json         # Blender MCP server configuration
-    │   └── CLAUDE.md         # Blender-specific AI guidelines
-    ├── zola/                 # Zola template
-    │   ├── flake.nix         # Zola static site environment
-    │   ├── .mcp.json         # General MCP server configuration
-    │   └── CLAUDE.md         # Zola-specific AI guidelines
-    ├── zola-blog-init/       # Zola blog theme creation template
-    │   ├── flake.nix         # Zola development environment
-    │   ├── .mcp.json         # General MCP server configuration
-    │   └── CLAUDE.md         # Blog theme creation prompt
-    ├── nodejs/               # Node.js template
-    │   ├── flake.nix         # Node.js development environment
-    │   ├── .mcp.json         # General MCP server configuration
-    │   └── CLAUDE.md         # Node.js AI guidelines
-    └── python/               # Python template
-        ├── flake.nix         # Python + uv development environment
-        ├── .mcp.json         # General MCP server configuration
-        └── CLAUDE.md         # Python AI guidelines
+flakes/
+├── flake.nix              # Auto-discovers templates & packages
+├── templates/             # Project starter templates
+│   ├── default/
+│   ├── nodejs/
+│   ├── python/
+│   └── ...
+└── packages/              # Reusable software packages
+    └── auto-claude/
 ```
+
+## Technical Details
+
+- **Auto-discovery**: Uses `builtins.readDir` to scan directories
+- **Metadata extraction**: Pulls descriptions from `flake.nix` and `CLAUDE.md`
+- **Zero boilerplate**: Add a directory, it's instantly available
+- **Type-safe**: Only processes valid directories with required files
+
+See [IMPLEMENTATION_ANALYSIS.md](./IMPLEMENTATION_ANALYSIS.md) for technical deep-dive.
 
 ## Contributing
 
-Feel free to submit issues and pull requests to improve this template.
+Add templates or packages by creating directories in `templates/` or `packages/` - they'll be auto-discovered.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License
