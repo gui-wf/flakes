@@ -13,7 +13,7 @@ buildNpmPackage rec {
 
   src = fetchFromGitHub {
     owner = "gui-wf";
-    repo = "markdownify-mcp-utf8";
+    repo = "markdownify-mcp-server";
     rev = "5223556c4c3d5f6f0f34537e68ef06c86ecd962c"; # feat: add Nix flake
     hash = "sha256-EhJTaobOL9xCUfMd1EBw6k13rWjF0Xp7CZXMw0DYO8k=";
   };
@@ -42,7 +42,7 @@ buildNpmPackage rec {
 
   meta = {
     description = "MCP server that converts various file formats to Markdown using markitdown";
-    homepage = "https://github.com/gui-wf/markdownify-mcp-utf8";
+    homepage = "https://github.com/gui-wf/markdownify-mcp-server";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ gui-wf ];
     mainProgram = "mcp-markdownify-server";
