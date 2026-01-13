@@ -119,6 +119,14 @@
         # Expose all discovered packages
         packages = packages;
 
+        # Auto-generate apps from packages
+        apps = nixpkgs.lib.mapAttrs (
+          name: pkg: {
+            type = "app";
+            program = "${pkg}/bin/${name}";
+          }
+        ) packages;
+
         # Default development shell with common tools
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
@@ -136,11 +144,11 @@
               packageList = builtins.concatStringsSep ", " (builtins.attrNames packages);
             in
             ''
-              echo "🧊 Nix Flakes Development Repository"
+              echo "Nix Flakes Development Repository"
               echo ""
-              echo "📦 Available packages (${builtins.toString (builtins.length (builtins.attrNames packages))}): ${packageList}"
+              echo "Available packages (${builtins.toString (builtins.length (builtins.attrNames packages))}): ${packageList}"
               echo ""
-              echo "📝 Available templates (${builtins.toString (builtins.length (builtins.attrNames (discoverTemplates)))}): ${templateList}"
+              echo "Available templates (${builtins.toString (builtins.length (builtins.attrNames (discoverTemplates)))}): ${templateList}"
               echo ""
               echo "Usage:"
               echo "  nix flake init -t github:gui-wf/flakes#<template>"

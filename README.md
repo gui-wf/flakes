@@ -14,15 +14,15 @@ Think of a Nix flake as a **reproducible development environment in a file**. It
 
 ## What This Repository Provides
 
-### 📦 Packages (Reusable Software)
+### Packages (Reusable Software)
 
 | Package | Description | Usage |
 |---------|-------------|-------|
 | **auto-claude** | Autonomous multi-agent coding framework (Electron app) | `nix run github:gui-wf/flakes#auto-claude` |
 | **markdownify** | MCP server converting files to Markdown (PDF, Word, Excel, etc.) | `nix run github:gui-wf/flakes#markdownify` |
-| **pdf2epub** | PDF to EPUB converter with intelligent layout detection | `nix run github:gui-wf/flakes#pdf2epub input.pdf` |
+| **pdf2epub-mcp-server** | PDF to EPUB converter with intelligent layout detection | `nix run github:gui-wf/flakes#pdf2epub-mcp-server input.pdf` |
 
-### 📝 Templates (Project Starters)
+### Templates (Project Starters)
 
 | Template | Tools Included | Use Case |
 |----------|----------------|----------|
