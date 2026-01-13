@@ -36,12 +36,12 @@ let
 
   src = fetchFromGitHub {
     owner = "gui-wf";
-    repo = "pdf2epub";
+    repo = "pdf2epub-mcp-server";
     rev = "3a39508ad1aae00d12de7c84b00e1a9baf7da2bf"; # feat: add Nix flake
     hash = "sha256-NJ1VnpZ4pE6PpcyHcMDJp4WUOXNLBKmtVcF9m/vWBfM=";
   };
 in
-writeShellScriptBin "pdf2epub" ''
+writeShellScriptBin "pdf2epub-mcp-server" ''
   VENV_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/pdf2epub/venv"
   MARKER_INSTALLED="$VENV_DIR/.marker-installed"
 
