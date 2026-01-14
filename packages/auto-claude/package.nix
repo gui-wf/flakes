@@ -1,53 +1,133 @@
 {
   lib,
-  appimageTools,
-  fetchurl,
+  stdenv,
+  fetchFromGitHub,
+  makeWrapper,
+  nodejs_24,
+  python312,
+  git,
+  libsecret,
+  electron,
 }:
+
 let
   pname = "auto-claude";
-  version = "2.7.2";
+  version = "2.7.4";
 
-  src = fetchurl {
-    url = "https://github.com/AndyMik90/Auto-Claude/releases/download/v${version}/Auto-Claude-${version}-linux-x86_64.AppImage";
-    hash = "sha256-wI6jHRXnc2BcBEHzDDep5JJcpNLOFWzox4rWExBwUoA=";
+  src = fetchFromGitHub {
+    owner = "AndyMik90";
+    repo = "Auto-Claude";
+    rev = "v${version}";
+    hash = "sha256-7IPGleVU9EaYQuRQlKVApt/jItMpLRSaIxpN8KSoyIY=";
   };
 
-  appimageContents = appimageTools.extractType2 { inherit pname version src; };
+  # Provide Node.js 24 and Python 3.12
+  nodejsEnv = nodejs_24;
+  pythonEnv = python312.withPackages (ps: with ps; [
+    pip
+    virtualenv
+    setuptools
+    wheel
+  ]);
+
 in
-appimageTools.wrapType2 {
+stdenv.mkDerivation {
   inherit pname version src;
 
-  extraPkgs =
-    pkgs: with pkgs; [
-      libsecret
-      libGL
-      mesa
-    ];
+  nativeBuildInputs = [
+    makeWrapper
+    nodejsEnv
+    pythonEnv
+    git
+  ];
 
-  extraInstallCommands = ''
-    # Install desktop file
-    install -Dm644 ${appimageContents}/auto-claude-ui.desktop \
-      $out/share/applications/${pname}.desktop
+  # Don't build during nix build - we'll do it on first run
+  dontBuild = true;
+  dontConfigure = true;
 
-    # Install icon (only 4096x4096 available in AppImage)
-    install -Dm644 ${appimageContents}/usr/share/icons/hicolor/4096x4096/apps/auto-claude-ui.png \
-      $out/share/icons/hicolor/4096x4096/apps/${pname}.png
+  installPhase = ''
+    runHook preInstall
 
-    # Fix desktop file paths
-    substituteInPlace $out/share/applications/${pname}.desktop \
-      --replace-fail 'Exec=AppRun --no-sandbox %U' 'Exec=${pname} %U' \
-      --replace-fail 'Icon=auto-claude-ui' 'Icon=${pname}'
+    # Install source to $out/share
+    mkdir -p $out/share/${pname}
+    cp -r . $out/share/${pname}/
+
+    # Create wrapper script
+    mkdir -p $out/bin
+    cat > $out/bin/${pname} <<'EOF'
+#!/usr/bin/env bash
+set -e
+
+# Setup directories
+INSTALL_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/auto-claude"
+INITIALIZED="$INSTALL_DIR/.initialized"
+
+# Initialize on first run
+if [ ! -f "$INITIALIZED" ]; then
+  echo "First run: Setting up Auto-Claude..."
+  echo "This will take a few minutes..."
+
+  mkdir -p "$INSTALL_DIR"
+  cd "$INSTALL_DIR"
+
+  # Copy source if not already there
+  if [ ! -f "package.json" ]; then
+    cp -r @out@/share/@pname@/* .
+    chmod -R u+w .
+  fi
+
+  # Install Node.js dependencies
+  echo "Installing Node.js dependencies..."
+  @nodejs@/bin/npm install --no-save --prefer-offline
+
+  # Setup Python backend
+  echo "Setting up Python backend..."
+  cd apps/backend
+  @python@/bin/python -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  cd ../..
+
+  touch "$INITIALIZED"
+  echo "Setup complete!"
+fi
+
+# Run the application
+cd "$INSTALL_DIR"
+export PATH="@nodejs@/bin:@python@/bin:@git@/bin:$PATH"
+export NODE_PATH="$INSTALL_DIR/node_modules"
+
+# Activate Python venv
+source "$INSTALL_DIR/apps/backend/.venv/bin/activate"
+
+# Run Electron app
+exec @nodejs@/bin/npm start -- "$@"
+EOF
+
+    chmod +x $out/bin/${pname}
+
+    # Substitute paths
+    substituteInPlace $out/bin/${pname} \
+      --replace '@out@' "$out" \
+      --replace '@pname@' "${pname}" \
+      --replace '@nodejs@' "${nodejsEnv}" \
+      --replace '@python@' "${pythonEnv}" \
+      --replace '@git@' "${git}"
+
+    runHook postInstall
   '';
 
   meta = {
     description = "Autonomous multi-agent coding framework powered by Claude AI";
+    longDescription = ''
+      Auto-Claude is an Electron desktop application with Python backend
+      for autonomous AI agent workflows. This wrapper sets up dependencies
+      on first run and manages the application in user space.
+    '';
     homepage = "https://github.com/AndyMik90/Auto-Claude";
-    downloadPage = "https://github.com/AndyMik90/Auto-Claude/releases";
-    changelog = "https://github.com/AndyMik90/Auto-Claude/releases/tag/v${version}";
     license = lib.licenses.agpl3Only;
-    maintainers = [ ];
+    maintainers = with lib.maintainers; [ gui-wf ];
     mainProgram = "auto-claude";
-    platforms = [ "x86_64-linux" ];
-    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
+    platforms = [ "x86_64-linux" "aarch64-linux" ];
   };
 }
