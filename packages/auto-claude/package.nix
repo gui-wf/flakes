@@ -105,6 +105,11 @@ appimageTools.wrapType2 {
   # Electron apps need this to prevent premature termination
   dieWithParent = false;
 
+  # Set APPIMAGE env var so Auto-Claude detects it's running as AppImage
+  extraBwrapArgs = [
+    "--setenv APPIMAGE /tmp/auto-claude.AppImage"
+  ];
+
   meta = {
     description = "Autonomous multi-agent coding framework powered by Claude AI";
     longDescription = ''
