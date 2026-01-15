@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  stdenvNoCC,
   callPackage,
   fetchurl,
 }:
@@ -52,7 +53,7 @@ let
   };
 
   # Platform dispatch
-  platformPackage = if stdenv.hostPlatform.isLinux then ./linux.nix else ./darwin.nix;
+  platformPackage = if stdenv.hostPlatform.isDarwin then ./darwin.nix else ./linux.nix;
 in
 callPackage platformPackage {
   inherit

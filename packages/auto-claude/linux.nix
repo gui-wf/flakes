@@ -29,9 +29,6 @@
   expat,
 }:
 
-let
-  appimageContents = appimageTools.extractType2 { inherit pname version src; };
-in
 appimageTools.wrapType2 {
   inherit pname version src;
 
@@ -80,29 +77,35 @@ appimageTools.wrapType2 {
       xorg.libxshmfence
     ];
 
-  extraInstallCommands = ''
-    # Install desktop file
-    install -Dm644 ${appimageContents}/auto-claude-ui.desktop \
-      $out/share/applications/${pname}.desktop
+  extraInstallCommands =
+    let
+      appimageContents = appimageTools.extract { inherit pname version src; };
+    in
+    ''
+      # Install desktop file
+      install -Dm644 ${appimageContents}/auto-claude-ui.desktop \
+        $out/share/applications/${pname}.desktop
 
-    # Install all available icon sizes
-    for size in 16 32 48 64 128 256 512; do
-      install -Dm644 ${appimageContents}/usr/share/icons/hicolor/''${size}x''${size}/apps/auto-claude-ui.png \
-        $out/share/icons/hicolor/''${size}x''${size}/apps/${pname}.png
-    done
+      # Install all available icon sizes
+      for size in 16 32 48 64 128 256 512; do
+        if [ -f "${appimageContents}/usr/share/icons/hicolor/''${size}x''${size}/apps/auto-claude-ui.png" ]; then
+          install -Dm644 ${appimageContents}/usr/share/icons/hicolor/''${size}x''${size}/apps/auto-claude-ui.png \
+            $out/share/icons/hicolor/''${size}x''${size}/apps/${pname}.png
+        fi
+      done
 
-    # Fix desktop file paths
-    substituteInPlace $out/share/applications/${pname}.desktop \
-      --replace-fail 'Exec=AppRun --no-sandbox %U' 'Exec=${pname} %U' \
-      --replace-fail 'Icon=auto-claude-ui' 'Icon=${pname}'
-  '';
+      # Fix desktop file paths
+      substituteInPlace $out/share/applications/${pname}.desktop \
+        --replace-fail 'Exec=AppRun --no-sandbox %U' 'Exec=${pname} %U' \
+        --replace-fail 'Icon=auto-claude-ui' 'Icon=${pname}'
+    '';
 
   # Electron apps need this to prevent premature termination
   dieWithParent = false;
 
   # Set APPIMAGE env var so Auto-Claude detects it's running as AppImage
   extraBwrapArgs = [
-    "--setenv APPIMAGE /tmp/auto-claude.AppImage"
+    "--setenv APPIMAGE ${src}"
   ];
 
   meta = meta // {
