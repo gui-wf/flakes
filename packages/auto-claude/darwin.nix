@@ -16,25 +16,31 @@ stdenvNoCC.mkDerivation {
     makeWrapper
   ];
 
-  sourceRoot = "Auto-Claude.app";
+  sourceRoot = ".";
 
   installPhase = ''
     runHook preInstall
 
     # Install .app bundle to Applications
-    mkdir -p "$out/Applications/Auto-Claude.app"
-    cp -R . "$out/Applications/Auto-Claude.app"
+    mkdir -p "$out/Applications"
+    cp -R *.app "$out/Applications/"
 
-    # Create CLI wrapper for terminal usage
+    # Create CLI wrapper using open command (standard macOS approach)
     mkdir -p "$out/bin"
-    makeWrapper "$out/Applications/Auto-Claude.app/Contents/MacOS/Auto-Claude" "$out/bin/${pname}" \
-      --chdir "$out/Applications/Auto-Claude.app/Contents/Resources"
+    cat > "$out/bin/${pname}" << 'EOF'
+#!/bin/sh
+exec open -a "$out/Applications/Auto-Claude.app" --args "$@"
+EOF
+    chmod +x "$out/bin/${pname}"
+
+    substituteInPlace "$out/bin/${pname}" --replace '$out' "$out"
 
     runHook postInstall
   '';
 
   # Preserve code signature for notarized app
-  dontFixup = true;
+  dontStrip = true;
+  dontPatchShebangs = true;
 
   meta = meta // {
     platforms = [ "x86_64-darwin" "aarch64-darwin" ];
