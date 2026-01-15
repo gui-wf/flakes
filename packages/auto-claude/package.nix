@@ -1,15 +1,14 @@
 {
   lib,
-  stdenv,
-  fetchFromGitHub,
-  makeWrapper,
-  nodejs_24,
+  appimageTools,
+  fetchurl,
   python312,
   git,
   gtk3,
   libsecret,
   libGL,
   mesa,
+  libgbm,
   alsa-lib,
   nss,
   nspr,
@@ -25,113 +24,41 @@
   xorg,
   systemd,
   expat,
-  libgbm,
 }:
 
 let
   pname = "auto-claude";
   version = "2.7.4";
 
-  src = fetchFromGitHub {
-    owner = "AndyMik90";
-    repo = "Auto-Claude";
-    rev = "v${version}";
-    hash = "sha256-7IPGleVU9EaYQuRQlKVApt/jItMpLRSaIxpN8KSoyIY=";
+  src = fetchurl {
+    url = "https://github.com/AndyMik90/Auto-Claude/releases/download/v${version}/Auto-Claude-${version}-linux-x86_64.AppImage";
+    hash = "sha256-8aq8WEv64ZpeEVkEU3+L6n2doP8AFeKM8BcnA+thups=";
   };
 
-  # Provide Node.js 24 and Python 3.12
-  nodejsEnv = nodejs_24;
-  pythonEnv = python312.withPackages (ps: with ps; [
-    pip
-    virtualenv
-    setuptools
-    wheel
-  ]);
-
+  appimageContents = appimageTools.extractType2 { inherit pname version src; };
 in
-stdenv.mkDerivation {
+appimageTools.wrapType2 {
   inherit pname version src;
 
-  nativeBuildInputs = [
-    makeWrapper
-    nodejsEnv
-    pythonEnv
-    git
-  ];
+  extraPkgs =
+    pkgs: with pkgs; [
+      # Python environment for backend venv creation
+      python312
+      python312Packages.pip
+      python312Packages.virtualenv
+      python312Packages.setuptools
 
-  # Don't build during nix build - we'll do it on first run
-  dontBuild = true;
-  dontConfigure = true;
+      # Git for Auto-Claude operations
+      git
 
-  installPhase = ''
-    runHook preInstall
-
-    # Install source to $out/share
-    mkdir -p $out/share/${pname}
-    cp -r . $out/share/${pname}/
-
-    # Create wrapper script
-    mkdir -p $out/bin
-    cat > $out/bin/${pname} <<'EOF'
-#!/usr/bin/env bash
-set -e
-
-# Setup directories
-INSTALL_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/auto-claude"
-INITIALIZED="$INSTALL_DIR/.initialized"
-
-# Initialize on first run
-if [ ! -f "$INITIALIZED" ]; then
-  echo "First run: Setting up Auto-Claude..."
-  echo "This will take a few minutes..."
-
-  mkdir -p "$INSTALL_DIR"
-  cd "$INSTALL_DIR"
-
-  # Copy source if not already there
-  if [ ! -f "package.json" ]; then
-    cp -r @out@/share/@pname@/* .
-    chmod -R u+w .
-  fi
-
-  # Install Node.js dependencies
-  echo "Installing Node.js dependencies..."
-  @nodejs@/bin/npm install --no-save --prefer-offline
-
-  # Setup Python backend
-  echo "Setting up Python backend..."
-  cd apps/backend
-  @python@/bin/python -m venv .venv
-  source .venv/bin/activate
-  pip install -r requirements.txt
-  cd ../..
-
-  touch "$INITIALIZED"
-  echo "Setup complete!"
-fi
-
-# Run the application
-cd "$INSTALL_DIR"
-export PATH="@nodejs@/bin:@python@/bin:@git@/bin:$PATH"
-export NODE_PATH="$INSTALL_DIR/node_modules"
-export LD_LIBRARY_PATH="@libPath@:$LD_LIBRARY_PATH"
-
-# Activate Python venv
-source "$INSTALL_DIR/apps/backend/.venv/bin/activate"
-
-# Run Electron app
-exec @nodejs@/bin/npm start -- "$@"
-EOF
-
-    chmod +x $out/bin/${pname}
-
-    # Build library path for Electron
-    libPath="${lib.makeLibraryPath [
+      # Graphics and UI libraries
       gtk3
       libsecret
       libGL
       mesa
       libgbm
+
+      # Audio and system
       alsa-lib
       nss
       nspr
@@ -145,6 +72,9 @@ EOF
       cairo
       gdk-pixbuf
       expat
+      systemd
+
+      # X11 libraries
       xorg.libX11
       xorg.libXcomposite
       xorg.libXdamage
@@ -153,32 +83,45 @@ EOF
       xorg.libXrandr
       xorg.libxcb
       xorg.libxshmfence
-      systemd
-    ]}"
+    ];
 
-    # Substitute paths
-    substituteInPlace $out/bin/${pname} \
-      --replace '@out@' "$out" \
-      --replace '@pname@' "${pname}" \
-      --replace '@nodejs@' "${nodejsEnv}" \
-      --replace '@python@' "${pythonEnv}" \
-      --replace '@git@' "${git}" \
-      --replace '@libPath@' "$libPath"
+  extraInstallCommands = ''
+    # Install desktop file
+    install -Dm644 ${appimageContents}/auto-claude-ui.desktop \
+      $out/share/applications/${pname}.desktop
 
-    runHook postInstall
+    # Install all available icon sizes
+    for size in 16 32 48 64 128 256 512; do
+      install -Dm644 ${appimageContents}/usr/share/icons/hicolor/''${size}x''${size}/apps/auto-claude-ui.png \
+        $out/share/icons/hicolor/''${size}x''${size}/apps/${pname}.png
+    done
+
+    # Fix desktop file paths
+    substituteInPlace $out/share/applications/${pname}.desktop \
+      --replace-fail 'Exec=AppRun --no-sandbox %U' 'Exec=${pname} %U' \
+      --replace-fail 'Icon=auto-claude-ui' 'Icon=${pname}'
   '';
+
+  # Electron apps need this to prevent premature termination
+  dieWithParent = false;
 
   meta = {
     description = "Autonomous multi-agent coding framework powered by Claude AI";
     longDescription = ''
       Auto-Claude is an Electron desktop application with Python backend
-      for autonomous AI agent workflows. This wrapper sets up dependencies
-      on first run and manages the application in user space.
+      for autonomous AI agent workflows.
+
+      The AppImage includes a bundled Python runtime. On first run, it creates
+      a virtual environment in ~/.config/auto-claude-ui/python-venv and
+      installs required Python packages (claude-agent-sdk, python-dotenv, etc.).
     '';
     homepage = "https://github.com/AndyMik90/Auto-Claude";
+    downloadPage = "https://github.com/AndyMik90/Auto-Claude/releases";
+    changelog = "https://github.com/AndyMik90/Auto-Claude/releases/tag/v${version}";
     license = lib.licenses.agpl3Only;
     maintainers = with lib.maintainers; [ gui-wf ];
     mainProgram = "auto-claude";
-    platforms = [ "x86_64-linux" "aarch64-linux" ];
+    platforms = [ "x86_64-linux" ];
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
   };
 }
