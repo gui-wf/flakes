@@ -6,8 +6,26 @@
   nodejs_24,
   python312,
   git,
+  gtk3,
   libsecret,
-  electron,
+  libGL,
+  mesa,
+  alsa-lib,
+  nss,
+  nspr,
+  atk,
+  at-spi2-atk,
+  cups,
+  dbus,
+  libdrm,
+  libxkbcommon,
+  pango,
+  cairo,
+  gdk-pixbuf,
+  xorg,
+  systemd,
+  expat,
+  libgbm,
 }:
 
 let
@@ -96,6 +114,7 @@ fi
 cd "$INSTALL_DIR"
 export PATH="@nodejs@/bin:@python@/bin:@git@/bin:$PATH"
 export NODE_PATH="$INSTALL_DIR/node_modules"
+export LD_LIBRARY_PATH="@libPath@:$LD_LIBRARY_PATH"
 
 # Activate Python venv
 source "$INSTALL_DIR/apps/backend/.venv/bin/activate"
@@ -106,13 +125,45 @@ EOF
 
     chmod +x $out/bin/${pname}
 
+    # Build library path for Electron
+    libPath="${lib.makeLibraryPath [
+      gtk3
+      libsecret
+      libGL
+      mesa
+      libgbm
+      alsa-lib
+      nss
+      nspr
+      atk
+      at-spi2-atk
+      cups
+      dbus
+      libdrm
+      libxkbcommon
+      pango
+      cairo
+      gdk-pixbuf
+      expat
+      xorg.libX11
+      xorg.libXcomposite
+      xorg.libXdamage
+      xorg.libXext
+      xorg.libXfixes
+      xorg.libXrandr
+      xorg.libxcb
+      xorg.libxshmfence
+      systemd
+    ]}"
+
     # Substitute paths
     substituteInPlace $out/bin/${pname} \
       --replace '@out@' "$out" \
       --replace '@pname@' "${pname}" \
       --replace '@nodejs@' "${nodejsEnv}" \
       --replace '@python@' "${pythonEnv}" \
-      --replace '@git@' "${git}"
+      --replace '@git@' "${git}" \
+      --replace '@libPath@' "$libPath"
 
     runHook postInstall
   '';
