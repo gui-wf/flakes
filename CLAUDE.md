@@ -12,9 +12,9 @@ This repository contains Nix flake templates for development environments.
 
 ### Default Template (General Purpose)
 ```bash
-nix flake init -t github:gui-baeta/flakes
+nix flake init -t github:gui-wf/flakes
 # or explicitly:
-nix flake init -t github:gui-baeta/flakes#default
+nix flake init -t github:gui-wf/flakes#default
 ```
 - Node.js + Python + essential tools
 - Example package and app structure
@@ -22,7 +22,7 @@ nix flake init -t github:gui-baeta/flakes#default
 
 ### Blender Template
 ```bash
-nix flake init -t github:gui-baeta/flakes#blender
+nix flake init -t github:gui-wf/flakes#blender
 ```
 - Blender for 3D modeling/animation
 - uv for Python package management
@@ -30,7 +30,7 @@ nix flake init -t github:gui-baeta/flakes#blender
 
 ### Zola Template
 ```bash
-nix flake init -t github:gui-baeta/flakes#zola
+nix flake init -t github:gui-wf/flakes#zola
 ```
 - Zola static site generator
 - General development workflows and documentation
@@ -38,7 +38,7 @@ nix flake init -t github:gui-baeta/flakes#zola
 
 ### Zola-Blog-Init Template
 ```bash
-nix flake init -t github:gui-baeta/flakes#zola-blog-init
+nix flake init -t github:gui-wf/flakes#zola-blog-init
 ```
 - Specialized blog theme creation template
 - Complete Zola blog theme development prompt with Claude Code integration
@@ -158,8 +158,8 @@ buildNpmPackage rec {
 ### Expose as Flake Outputs
 
 MCP server packages MUST be available via:
-- `nix run github:gui-baeta/flakes#mcp-server-name` (as an app)
-- `nix build github:gui-baeta/flakes#mcp-server-name` (as a package)
+- `nix run github:gui-wf/flakes#mcp-server-name` (as an app)
+- `nix build github:gui-wf/flakes#mcp-server-name` (as a package)
 
 ### Configuration via .mcp.json
 
