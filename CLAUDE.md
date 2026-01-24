@@ -76,6 +76,95 @@ All templates include `.mcp.json` with:
 
 Required environment variables: `REF_API_KEY`, `PERPLEXITY_API_KEY`
 
+## MCP Server Packaging Guidelines
+
+When adding MCP servers to this repository, package them as **proper Nix derivations** exposed as flake apps/packages. **NEVER** simply add tools to `buildInputs` or use generic approaches.
+
+### Critical Requirement: Use the Correct Ecosystem-Specific Builder
+
+**ALWAYS research and use the specific Nix packaging tool for the MCP server's language/ecosystem.** Do not guess or use generic approaches. Each ecosystem has dedicated tooling:
+
+| Ecosystem | Primary Builder | Flake Input |
+|-----------|----------------|-------------|
+| **Bun** | `bun2nix` (`mkBunPackage`) | `github:nix-community/bun2nix` |
+| **Node.js (npm)** | `buildNpmPackage` | Built-in nixpkgs |
+| **Node.js (yarn)** | `mkYarnPackage` or `yarn2nix` | Built-in nixpkgs |
+| **Node.js (pnpm)** | `pnpm2nix` | `github:nix-community/pnpm2nix` |
+| **Rust** | `crane`, `naersk`, or `rustPlatform.buildRustPackage` | `github:ipetkov/crane` |
+| **Python** | `poetry2nix`, `pyproject.nix`, or `buildPythonPackage` | `github:nix-community/poetry2nix` |
+| **Go** | `buildGoModule` | Built-in nixpkgs |
+
+### Workflow for Adding a New MCP Server
+
+1. **Identify the tech stack**: Check the MCP server's `package.json`, `Cargo.toml`, `pyproject.toml`, etc.
+2. **Research the correct Nix builder**: Search for "{ecosystem} nix packaging" or check nixpkgs docs
+3. **Add required flake inputs**: Most ecosystem-specific tools require a flake input
+4. **Create the derivation**: Use the ecosystem's idiomatic patterns
+5. **Expose as flake outputs**: Both `packages` and `apps`
+6. **Test the build**: `nix build .#mcp-server-name`
+
+### Example: Bun-based MCP Server (using bun2nix)
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    bun2nix.url = "github:nix-community/bun2nix";
+  };
+
+  outputs = { self, nixpkgs, bun2nix }: {
+    packages.x86_64-linux.my-mcp-server =
+      let
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      in
+      bun2nix.lib.x86_64-linux.mkBunPackage {
+        src = ./.;
+        # bun2nix handles lockfile conversion and dependency installation
+      };
+
+    apps.x86_64-linux.my-mcp-server = {
+      type = "app";
+      program = "${self.packages.x86_64-linux.my-mcp-server}/bin/my-mcp-server";
+    };
+  };
+}
+```
+
+### Example: npm-based MCP Server (using buildNpmPackage)
+
+```nix
+{ lib, buildNpmPackage, fetchFromGitHub }:
+
+buildNpmPackage rec {
+  pname = "mcp-server-example";
+  version = "0.1.0";
+
+  src = fetchFromGitHub {
+    owner = "example";
+    repo = "mcp-server-example";
+    tag = "v${version}";
+    hash = "sha256-AAAA...";
+  };
+
+  npmDepsHash = "sha256-BBBB...";
+
+  meta = {
+    description = "Example MCP server";
+    mainProgram = "mcp-server-example";
+  };
+}
+```
+
+### Expose as Flake Outputs
+
+MCP server packages MUST be available via:
+- `nix run github:gui-baeta/flakes#mcp-server-name` (as an app)
+- `nix build github:gui-baeta/flakes#mcp-server-name` (as a package)
+
+### Configuration via .mcp.json
+
+Templates reference the packaged MCP server by its Nix store path or command, not by npx or other runtime package managers.
+
 ### AI Notes and Breadcrumbs
 
 - Use `AIDEV-NOTE:`, `AIDEV-TODO:`, or `AIDEV-QUESTION:` (all-caps prefix) text anchors for comments aimed at AI and developers.
