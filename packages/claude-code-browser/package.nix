@@ -63,8 +63,8 @@ let
       echo ""
     fi
 
-    # Run the MCP server
-    exec ${pythonEnv}/bin/python "$DATA_DIR/src/mcp-server/server.py" "$@"
+    # Run the MCP server via stdio wrapper (bridges Claude Code stdio to HTTP server)
+    exec ${pythonEnv}/bin/python "$DATA_DIR/src/mcp-server/stdio_wrapper.py" "$@"
   '';
 
   # Provide MCP config template for users
