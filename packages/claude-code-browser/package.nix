@@ -14,8 +14,8 @@ let
   src = fetchFromGitHub {
     owner = "nanogenomic";
     repo = "ClaudeCodeBrowser";
-    rev = "15af6e6a3a8a2ab0a0afaa1f2f52b5c57f959e3b"; # main as of 2025-01
-    hash = "sha256-7E+0PUgYNLH//NG2q7xPDrYlC1mLMh3+Bx04qWVV8es=";
+    rev = "3bf4a83ca0f70849142065cb6a993efcc7fe760b"; # HEAD as of 2026-02
+    hash = "sha256-GLfet+EhCDidKLoj/k7gw/PyOkvcJbPNPPb26uOBkpk=";
   };
 
   pythonEnv = python3.withPackages (ps: with ps; [
