@@ -10,11 +10,13 @@ let
   pname = "claude-code-browser";
   version = "0-unstable-2026-02-05";
 
+  # Using fork with HTTP polling fix until upstream merges PR#1
+  # https://github.com/nanogenomic/ClaudeCodeBrowser/pull/1
   src = fetchFromGitHub {
-    owner = "nanogenomic";
+    owner = "gui-wf";
     repo = "ClaudeCodeBrowser";
-    rev = "3bf4a83ca0f70849142065cb6a993efcc7fe760b";
-    hash = "sha256-GLfet+EhCDidKLoj/k7gw/PyOkvcJbPNPPb26uOBkpk=";
+    rev = "49551773a96a6f59a5263eb23d954d299d9affa7";
+    hash = "sha256-QrHaEXKgtMsTdIzqHIYoqZ/XQq2POhFOdmt81hFy0kI=";
   };
 
   pythonEnv = python3.withPackages (ps: [ ps.websockets ]);
