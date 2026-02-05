@@ -12,11 +12,12 @@ let
 
   # Using fork with HTTP polling fix until upstream merges PR#1
   # https://github.com/nanogenomic/ClaudeCodeBrowser/pull/1
+  # Includes: response waiting mechanism, IPv6 localhost fix
   src = fetchFromGitHub {
     owner = "gui-wf";
     repo = "ClaudeCodeBrowser";
-    rev = "49551773a96a6f59a5263eb23d954d299d9affa7";
-    hash = "sha256-QrHaEXKgtMsTdIzqHIYoqZ/XQq2POhFOdmt81hFy0kI=";
+    rev = "5db9befa47b82619767f7244d5a691b5ed8c71ed";
+    hash = "sha256-TtTcp30a34DObQ7oZXImNti+E82jvxucsG8M+RT6hKo=";
   };
 
   pythonEnv = python3.withPackages (ps: [ ps.websockets ]);
