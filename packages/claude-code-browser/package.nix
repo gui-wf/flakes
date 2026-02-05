@@ -1,112 +1,91 @@
 {
   lib,
+  stdenvNoCC,
   fetchFromGitHub,
   python3,
-  writeShellScriptBin,
-  writeTextDir,
-  symlinkJoin,
+  makeWrapper,
 }:
 
 let
   pname = "claude-code-browser";
-  version = "0.1.0";
+  version = "0-unstable-2026-02-05";
 
   src = fetchFromGitHub {
     owner = "nanogenomic";
     repo = "ClaudeCodeBrowser";
-    rev = "3bf4a83ca0f70849142065cb6a993efcc7fe760b"; # HEAD as of 2026-02
+    rev = "3bf4a83ca0f70849142065cb6a993efcc7fe760b";
     hash = "sha256-GLfet+EhCDidKLoj/k7gw/PyOkvcJbPNPPb26uOBkpk=";
   };
 
-  pythonEnv = python3.withPackages (ps: with ps; [
-    websockets
-  ]);
-
-  # Main MCP server script wrapper
-  serverScript = writeShellScriptBin pname ''
-    set -e
-
-    # Setup data directory
-    DATA_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/${pname}"
-    SCREENSHOTS_DIR="''${CLAUDE_BROWSER_SCREENSHOTS_DIR:-$DATA_DIR/screenshots}"
-    INSTALL_MARKER="$DATA_DIR/.installed-${version}"
-
-    # Environment defaults
-    export CLAUDE_BROWSER_HOST="''${CLAUDE_BROWSER_HOST:-127.0.0.1}"
-    export CLAUDE_BROWSER_HTTP_PORT="''${CLAUDE_BROWSER_HTTP_PORT:-8765}"
-    export CLAUDE_BROWSER_WS_PORT="''${CLAUDE_BROWSER_WS_PORT:-8766}"
-    export CLAUDE_BROWSER_SCREENSHOTS_DIR="$SCREENSHOTS_DIR"
-
-    # First-time setup
-    if [ ! -f "$INSTALL_MARKER" ]; then
-      echo "First run: Setting up ${pname} v${version}..."
-      mkdir -p "$DATA_DIR"
-      mkdir -p "$SCREENSHOTS_DIR"
-
-      # Copy source to data directory for Firefox extension access
-      rm -rf "$DATA_DIR/src"
-      cp -r ${src} "$DATA_DIR/src"
-      chmod -R u+w "$DATA_DIR/src"
-
-      touch "$INSTALL_MARKER"
-      echo ""
-      echo "Setup complete!"
-      echo ""
-      echo "IMPORTANT: Firefox extension setup required:"
-      echo "  1. Open Firefox and navigate to: about:debugging#/runtime/this-firefox"
-      echo "  2. Click 'Load Temporary Add-on...'"
-      echo "  3. Select: $DATA_DIR/src/extension/manifest.json"
-      echo "  4. The extension will load (needs reloading after Firefox restart)"
-      echo ""
-      echo "For permanent extension installation, see:"
-      echo "  https://github.com/nanogenomic/ClaudeCodeBrowser#installation"
-      echo ""
-    fi
-
-    # Run the MCP server via stdio wrapper (bridges Claude Code stdio to HTTP server)
-    exec ${pythonEnv}/bin/python "$DATA_DIR/src/mcp-server/stdio_wrapper.py" "$@"
-  '';
-
-  # Provide MCP config template for users
-  mcpConfigTemplate = writeTextDir "share/${pname}/mcp-config.json" (builtins.toJSON {
-    mcpServers = {
-      claudecodebrowser = {
-        type = "stdio";
-        command = "${serverScript}/bin/${pname}";
-        args = [ ];
-      };
-    };
-  });
+  pythonEnv = python3.withPackages (ps: [ ps.websockets ]);
 
 in
-symlinkJoin {
-  name = pname;
-  paths = [ serverScript mcpConfigTemplate ];
+stdenvNoCC.mkDerivation {
+  inherit pname version src;
+
+  nativeBuildInputs = [ makeWrapper ];
+
+  dontBuild = true;
+  dontConfigure = true;
+
+  installPhase = ''
+    runHook preInstall
+
+    # MCP Server files
+    mkdir -p $out/lib/claudecodebrowser/mcp-server
+    cp mcp-server/server.py $out/lib/claudecodebrowser/mcp-server/
+    cp mcp-server/stdio_wrapper.py $out/lib/claudecodebrowser/mcp-server/
+    test -f mcp-server/mcp_config.json && cp mcp-server/mcp_config.json $out/lib/claudecodebrowser/mcp-server/
+
+    # Native host files
+    mkdir -p $out/lib/claudecodebrowser/native-host
+    cp native-host/claudecodebrowser_host.py $out/lib/claudecodebrowser/native-host/
+
+    # Agent files
+    mkdir -p $out/lib/claudecodebrowser/agent
+    cp agent/browser_agent.py $out/lib/claudecodebrowser/agent/
+
+    # Extension (for manual installation in Firefox)
+    mkdir -p $out/share/claudecodebrowser/extension
+    cp -r extension/* $out/share/claudecodebrowser/extension/
+
+    # Wrapper scripts in bin/
+    mkdir -p $out/bin
+
+    # HTTP server (runs persistently)
+    makeWrapper ${pythonEnv}/bin/python3 $out/bin/claudecodebrowser-server \
+      --add-flags "$out/lib/claudecodebrowser/mcp-server/server.py"
+
+    # Stdio wrapper (bridges Claude Code stdio to HTTP server)
+    makeWrapper ${pythonEnv}/bin/python3 $out/bin/claudecodebrowser-stdio \
+      --add-flags "$out/lib/claudecodebrowser/mcp-server/stdio_wrapper.py"
+
+    # Native messaging host (for Firefox extension)
+    makeWrapper ${pythonEnv}/bin/python3 $out/bin/claudecodebrowser-native-host \
+      --add-flags "$out/lib/claudecodebrowser/native-host/claudecodebrowser_host.py"
+
+    # Browser agent CLI
+    makeWrapper ${pythonEnv}/bin/python3 $out/bin/claudecodebrowser-agent \
+      --add-flags "$out/lib/claudecodebrowser/agent/browser_agent.py"
+
+    runHook postInstall
+  '';
+
+  passthru = {
+    inherit pythonEnv;
+    # Paths for home-manager module to reference
+    serverScript = "lib/claudecodebrowser/mcp-server/server.py";
+    stdioScript = "lib/claudecodebrowser/mcp-server/stdio_wrapper.py";
+    nativeHostScript = "lib/claudecodebrowser/native-host/claudecodebrowser_host.py";
+    extensionPath = "share/claudecodebrowser/extension";
+  };
 
   meta = {
     description = "Firefox browser automation MCP server for Claude Code";
     homepage = "https://github.com/nanogenomic/ClaudeCodeBrowser";
     license = lib.licenses.mit;
-    maintainers = [ ];
-    mainProgram = pname;
     platforms = lib.platforms.linux;
-
-    longDescription = ''
-      ClaudeCodeBrowser is a Firefox browser automation system for Claude Code.
-      It provides MCP (Model Context Protocol) tools for:
-
-      - Screenshot capture (visible or full-page)
-      - Element interaction (click, type, scroll, hover)
-      - Navigation (URLs, tabs, page refresh)
-      - Element inspection and JavaScript execution
-      - Console and network monitoring
-      - Tab management
-
-      SETUP REQUIRED: After first run, you must manually load the Firefox
-      extension via about:debugging#/runtime/this-firefox.
-
-      The extension polls an HTTP server (port 8765 by default) and executes
-      browser commands. See the GitHub repo for detailed setup instructions.
-    '';
+    maintainers = [ ];
+    mainProgram = "claudecodebrowser-server";
   };
 }
