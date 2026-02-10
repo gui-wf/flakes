@@ -1,0 +1,130 @@
+name: Update packages
+
+on:
+  schedule:
+    # Weekly on Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Specific package to update (leave empty for all)"
+        required: false
+        type: string
+
+jobs:
+  update-release-packages:
+    # Packages that track GitHub Releases (nix-update --version=stable)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - clipcast
+          - voicetree
+      fail-fast: false
+    if: ${{ !inputs.package || inputs.package == matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Update ${{ matrix.package }}
+        run: |
+          nix-shell -p nix-update --run "nix-update --flake ${{ matrix.package }}"
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update ${{ matrix.package }}"
+          title: "chore: update ${{ matrix.package }}"
+          branch: "auto-update/${{ matrix.package }}"
+          body: |
+            Automated version update for `${{ matrix.package }}`.
+
+            Triggered by: ${{ github.event_name }}
+          delete-branch: true
+
+  update-auto-claude:
+    # auto-claude needs special handling for multi-platform hashes
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.package || inputs.package == 'auto-claude' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Check for new auto-claude release
+        id: check
+        run: |
+          CURRENT=$(grep 'version = ' packages/auto-claude/package.nix | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          LATEST=$(curl -s https://api.github.com/repos/AndyMik90/Auto-Claude/releases/latest | jq -r .tag_name | sed 's/^v//')
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          if [ "$CURRENT" != "$LATEST" ]; then
+            echo "needs_update=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update auto-claude version and hashes
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.latest }}"
+          FILE="packages/auto-claude/package.nix"
+
+          # Update version string
+          sed -i "s/version = \".*\"/version = \"$VERSION\"/" "$FILE"
+
+          # Prefetch each platform hash
+          BASE_URL="https://github.com/AndyMik90/Auto-Claude/releases/download/v${VERSION}"
+
+          LINUX_HASH=$(nix-prefetch-url "${BASE_URL}/Auto-Claude-${VERSION}-linux-x86_64.AppImage" 2>/dev/null | xargs nix hash convert --hash-algo sha256 --to sri)
+          DARWIN_X64_HASH=$(nix-prefetch-url "${BASE_URL}/Auto-Claude-${VERSION}-mac-x64.dmg" 2>/dev/null | xargs nix hash convert --hash-algo sha256 --to sri)
+          DARWIN_ARM64_HASH=$(nix-prefetch-url "${BASE_URL}/Auto-Claude-${VERSION}-mac-arm64.dmg" 2>/dev/null | xargs nix hash convert --hash-algo sha256 --to sri)
+
+          # AIDEV-NOTE: Hash replacement assumes platform-specific blocks maintain their order (linux, darwin-x64, darwin-arm64)
+          # Update hashes in order of appearance
+          python3 -c "
+          import re
+          with open('$FILE') as f:
+              content = f.read()
+          hashes = ['$LINUX_HASH', '$DARWIN_X64_HASH', '$DARWIN_ARM64_HASH']
+          i = 0
+          def replace_hash(m):
+              global i
+              if i < len(hashes):
+                  result = f'hash = \"{hashes[i]}\"'
+                  i += 1
+                  return result
+              return m.group(0)
+          content = re.sub(r'hash = \"sha256-[^\"]+\"', replace_hash, content)
+          with open('$FILE', 'w') as f:
+              f.write(content)
+          "
+
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.check.outputs.needs_update == 'true'
+        with:
+          commit-message: "chore: update auto-claude to v${{ steps.check.outputs.latest }}"
+          title: "chore: update auto-claude to v${{ steps.check.outputs.latest }}"
+          branch: "auto-update/auto-claude"
+          body: |
+            Automated version update for `auto-claude`.
+
+            `${{ steps.check.outputs.current }}` -> `${{ steps.check.outputs.latest }}`
+          delete-branch: true
+
+  update-flake-lock:
+    # Keep flake.lock (nixpkgs pin) fresh
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/update-flake-lock@main
+        with:
+          pr-title: "chore: update flake.lock"
+          pr-body: |
+            Automated `flake.lock` update.
+
+            Updates nixpkgs and other flake inputs to latest.
